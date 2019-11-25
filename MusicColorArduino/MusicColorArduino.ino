@@ -1,3 +1,6 @@
+//Code derived from this tutorial:
+//https://create.arduino.cc/projecthub/muhammad-aqib/arduino-rgb-led-tutorial-fc003e
+
 int red_light_pin= 11;
 int green_light_pin = 10;
 int blue_light_pin = 9;
