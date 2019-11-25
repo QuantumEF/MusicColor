@@ -4,56 +4,53 @@ from scipy.fftpack import fft
 from colorsys import hsv_to_rgb
 import pygame
 
-def process_to_color( fft_plot , frequencies):
-	max_ind = np.argmax(fft_plot)
+def audio_to_color( audio_chunk_size , frequencies):
+	c = fft(audio_chunk_size)
+	d = int(len(c)/2)  # you only need half of the fft list (real signal symmetry)
+	proc = abs(c[:(d-1)])
+	max_ind = np.argmax(proc)
 	#max_val = np.max(fft_plot)
 	if frequencies[max_ind] != 0:
+		#pitch is half-steps above C0
 		pitch = 12 * np.log2( frequencies[max_ind] / 16.35)
 	else: 
+		#log of zero is imaginary, and sometimes that is a value that is returned so /shrug
 		pitch = 1.0
-	#map 0-12 0-360
-	#probably map 0-65535 to 0-1
-	h = pitch % 12
-	h = h / 12
-	color = hsv_to_rgb(h, 1, 1)
-	return color, pitch
+	#map 0-12 0-360deg (0-1 for hsv fucntion input)
+	h = pitch % 12 #only look at octaves
+	color = hsv_to_rgb(h/12, 1, 1)
+	return color
 
-RATE    = 44100
-CHUNK   = int(44100/7)
+fs = 44100
+division = 7
+chunk_size = int(44100/division)
 
-k = np.arange(CHUNK)
-T = CHUNK/RATE  # where fs is the sampling frequency
-frqLabel = k/T
+#k = np.arange(chunk_size)
+#T = chunk_size/fs  # where fs is the sampling frequency
+#frqLabel = k/T
+frqLabel = division*np.arange(chunk_size) #magic I am not fully able to explain yet
 
+#This opens an audio stream from the mic
 p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paInt16, channels=1, rate=fs, input=True, frames_per_buffer=chunk_size)
 
-#player = p.open(format=pyaudio.paInt16, channels=1, rate=RATE, output=True, frames_per_buffer=CHUNK)
-stream = p.open(format=pyaudio.paInt16, channels=1, rate=RATE, input=True, frames_per_buffer=CHUNK)
-
+#pygame screen setup
 (width, height) = (300, 200)
 screen = pygame.display.set_mode((width, height))
 running = True
 
+#Color Display
 while running:
-
-	b = np.frombuffer(stream.read(CHUNK),dtype=np.int16)
-
-	c = fft(b) # calculate fourier transform (complex numbers list)
-	d = int(len(c)/2)  # you only need half of the fft list (real signal symmetry)
-	proc = abs(c[:(d-1)])
-	color, pitch = process_to_color(proc,frqLabel)
+	b = np.frombuffer(stream.read(chunk_size),dtype=np.int16)
+	color = audio_to_color(b,frqLabel)
 
 	background_colour = np.multiply(255,color)
 	screen.fill(background_colour)
 	pygame.display.flip()
 
-	#pygame.time.wait(round(1000/div))
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			running = False
-
-#for i in range(int(20*RATE/CHUNK)): #do this for 10 seconds
-#	print(np.fromstring(stream.read(CHUNK),dtype=np.int16))
 
 stream.stop_stream()
 stream.close()
