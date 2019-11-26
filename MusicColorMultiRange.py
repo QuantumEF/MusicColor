@@ -4,13 +4,15 @@ from scipy.io import wavfile
 import numpy as np
 from colorsys import hsv_to_rgb
 import pygame
+import MusicColorLib as mcl
 
+"""
 def audio_fft(audio_chunk):
 	c = fft(audio_chunk)
 	d = int(len(c)/2)  # you only need half of the fft list (real signal symmetry)
 	return abs(c[:(d-1)])
 
-def audio_to_color( audio_fft_chunk , frequencies):
+def audio_fft_to_color( audio_fft_chunk , frequencies):
 	#proc = audio_fft(audio_chunk)
 	max_ind = np.argmax(audio_fft_chunk)
 	#max_val = np.max(fft_plot)
@@ -25,57 +27,31 @@ def audio_to_color( audio_fft_chunk , frequencies):
 	color = hsv_to_rgb(h/12, 1, 1)
 	return np.multiply(255,color)
 
-def audio_to_multicolor(audio_fft, sample_rate, division):
-	#proc = audio_fft(audio_chunk)
-	audio_dict = {}
-
+def audio_fft_range_to_color(audio_fft, sample_rate, division, lower_freq, upper_freq):
 	frequencies = division*np.arange(int(sample_rate/division))
+	freq_bounds = [round(lower_freq/division),round(upper_freq/division)]
+	freq_range = frequencies[ freq_bounds[0]:freq_bounds[1] ]
+	fft_range = audio_fft[ freq_bounds[0]:freq_bounds[1] ]
+	color = audio_fft_to_color(fft_range,freq_range)
+	return color
+"""
 
-	low = [round(20/division),round(150/division)]
-	lowmid = [round(150/division),round(500/division)]
-	mid = [round(500/division),round(1200/division)]
-	highmid = [round(1200/division),round(6000/division)]
-	high = [round(6000/division),round(20000/division)]
-
-	low_freq = frequencies[ low[0]:low[1] ]
-	lowmid_freq = frequencies[ lowmid[0]:lowmid[1] ]
-	mid_freq = frequencies[ mid[0]:mid[1] ]
-	highmid_freq = frequencies[ highmid[0]:highmid[1] ]
-	high_freq = frequencies[ high[0]:high[1] ]
-
-	low_fft = audio_fft[ low[0]:low[1] ]
-	lowmid_fft = audio_fft[ lowmid[0]:lowmid[1] ]
-	mid_fft = audio_fft[ mid[0]:mid[1] ]
-	highmid_fft = audio_fft[ highmid[0]:highmid[1] ]
-	high_fft = audio_fft[ high[0]:high[1] ]
-
-	low_color = audio_to_color(low_fft,low_freq)
-	lowmid_color = audio_to_color(lowmid_fft,lowmid_freq)
-	mid_color = audio_to_color(mid_fft,mid_freq)
-	highmid_color = audio_to_color(highmid_fft,highmid_freq)
-	high_color = audio_to_color(high_fft,high_freq)
-
+def audio_fft_to_standard_range(audio_fft, sample_rate, division):
+	low_color = mcl.audio_fft_range_to_color(audio_fft, sample_rate, division, 20, 150)
+	lowmid_color = mcl.audio_fft_range_to_color(audio_fft, sample_rate, division, 150, 500)
+	mid_color = mcl.audio_fft_range_to_color(audio_fft, sample_rate, division, 500, 1200)
+	highmid_color = mcl.audio_fft_range_to_color(audio_fft, sample_rate, division, 1200, 6000)
+	high_color = mcl.audio_fft_range_to_color(audio_fft, sample_rate, division, 6000, 20000)
 	return (low_color,lowmid_color,mid_color,highmid_color,high_color)
 
 filename = "ProprietaryMusic/MusicTest.wav"
-
-fs, data = wavfile.read(filename) # load the data
-division = 14 #division of audio
-chunk_size = int(fs/division) #the subdivisions to take the fft of 
-b = data.T[0] # this is a two channel soundtrack, I get the first track
-
-#k = np.arange(chunk_size)
-#T = chunk_size/fs  # where fs is the sampling frequency same as 1/division
-#frqLabel = k/T
-frqLabel = division*np.arange(chunk_size) #magic I am not fully able to explain yet
-
-#This is to pre-process the wav file
+division = 7 #division of audio
 color_array = []
-for chunk in range(0,len(b)-chunk_size,chunk_size):
-	proc_audio = audio_fft(b[chunk:chunk+chunk_size])
-	colors = audio_to_multicolor( proc_audio , fs, division)
-	print(colors)
-	color_array.append(colors)
+fs, fft_array = mcl.wav_to_fft(filename, division)
+
+for fft in fft_array:
+	color = audio_fft_to_standard_range(fft, fs, division)
+	color_array.append(color)
 
 #pygame scren setup
 (width, height) = (500, 100)
