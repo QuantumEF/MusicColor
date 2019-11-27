@@ -3,16 +3,11 @@ from scipy.io import wavfile
 import numpy as np
 from colorsys import hsv_to_rgb
 import pygame
-import MusicColorLib as mcl
+from MusicColorLib import WavColor
 
 filename = "ProprietaryMusic/MusicTest.wav"
-division = 14 #division of audio
-color_array = []
-fs, fft_array = mcl.wav_to_fft(filename, division)
-
-for fft in fft_array:
-	color = mcl.audio_fft_to_color(fft, fs, division)
-	color_array.append(color)
+wavtest = WavColor(filename)
+wavtest.process_colors()
 
 #pygame scren setup
 (width, height) = (300, 200)
@@ -24,13 +19,13 @@ pygame.mixer.music.load(filename)
 pygame.mixer.music.play(-1)
 
 #color display
-for color in color_array:
+for color in wavtest.colors:
 	print(color)
 	screen.fill(color)
 	pygame.display.flip()
 
 	#Tries to show colors in sync with sound, but isn't perfect
-	pygame.time.wait(round(1000/division)) 
+	pygame.time.wait(round(1000/wavtest.division)) 
 
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
