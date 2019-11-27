@@ -5,7 +5,6 @@ import numpy as np
 from colorsys import hsv_to_rgb
 import pygame
 from MusicColorLib import WavColor
-
 filename = "ProprietaryMusic/MusicTest.wav"
 
 wavtest = WavColor(filename)

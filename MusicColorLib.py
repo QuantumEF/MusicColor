@@ -88,6 +88,7 @@ class WavColor:
 
 	def process_colors(self):
 		for fft in self.fft_array:
+			self.colors.append( audio_fft_to_color(fft) )
 
 """
 class LiveColor:
