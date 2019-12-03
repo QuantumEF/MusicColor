@@ -19,12 +19,22 @@ screen = pygame.display.set_mode((width, height))
 running = True
 
 color_stream = mcl.LiveColor(sample_rate, chunk_size)
+color_stream.add_band('low', 20, 150)
+color_stream.add_band('lowmid', 150, 500)
+color_stream.add_band('mid', 500, 1200)
+color_stream.add_band('highmid', 1200, 6000)
+color_stream.add_band('high', 6000, 20000)
+
 
 #Color Display
 while running:
 	b = np.frombuffer(stream.read(chunk_size),dtype=np.int16)
-	color = color_stream.color_buffer(b)
-	screen.fill(color)
+	color_bands = color_stream.color_band_buffer(b)
+	pygame.draw.rect(screen, color_bands["low"][i], (0,0,100,100), 0)
+	pygame.draw.rect(screen, color_bands["lowmid"][i], (100,0,100,100), 0)
+	pygame.draw.rect(screen, color_bands["mid"][i], (200,0,100,100), 0)
+	pygame.draw.rect(screen, color_bands["highmid"][i], (300,0,100,100), 0)
+	pygame.draw.rect(screen, color_bands["high"][i], (400,0,100,100), 0)
 	pygame.display.flip()
 
 	for event in pygame.event.get():

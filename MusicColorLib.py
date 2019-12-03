@@ -5,8 +5,15 @@ from colorsys import hsv_to_rgb
 from warnings import warn
 
 class AudioFFT:
-	def __init__(self, audio_chunk = None, sample_rate = None, division = 7):
-		if audio_chunk.all() != None:
+	def __init__(self, audio_chunk = None, sample_rate = 44100, division = 7, frequency_range = np.full([8,1],None)):
+		if frequency_range.all() != None:
+			c = fft(audio_chunk)
+			d = int(len(c)/2)  # you only need half of the fft list (real signal symmetry)
+			self.fft = abs(c[:(d-1)])
+			self.frequency_range =frequency_range
+			self.sample_rate = sample_rate
+			self.division = division
+		elif audio_chunk.all() != None:
 			c = fft(audio_chunk)
 			d = int(len(c)/2)  # you only need half of the fft list (real signal symmetry)
 			self.fft = abs(c[:(d-1)])
@@ -15,9 +22,9 @@ class AudioFFT:
 			self.sample_rate = sample_rate
 		else:
 			self.fft = []
-			self.frequency_range = []
-			self.division = 7
-			self.sample_rate = 44100
+			self.frequency_range = frequency_range
+			self.division = division
+			self.sample_rate = sample_rate
 
 #this takes an input of class AudioFFT
 def audio_fft_to_color( audio_fft ):
@@ -28,17 +35,18 @@ def audio_fft_to_color( audio_fft ):
 		pitch = 12 * np.log2( audio_fft.frequency_range[max_ind] / 16.35)
 	else: 
 		#log of zero is imaginary, and sometimes that is a value that is returned so /shrug
-		pitch = 1.0
+		pitch = 0
 	#map 0-12 0-360deg (0-1 for hsv fucntion input)
 	h = pitch % 12 #only look at octaves
 	color = hsv_to_rgb(h/12, 1, 1)
 	return np.multiply(255,color)
 
 #This takes an input of class AudioFFT and a lover and upper frequency bounds
-def audio_fft_range_to_color(audio_fft, lower_freq, upper_freq):
-	fft_range = AudioFFT(np.full([8,1],None), audio_fft.sample_rate, audio_fft.division)
-	freq_bounds = [round(lower_freq/audio_fft.division),round(upper_freq/audio_fft.division)]
-	fft_range.frequency_range = audio_fft.frequency_range[ freq_bounds[0]:freq_bounds[1] ]
+def audio_fft_range_to_color(audio_fft, lower_freq = None, upper_freq = None, freq_bounds = np.full([8,1],None) ):
+	if freq_bounds.all() == None:
+		freq_bounds = [round(lower_freq/audio_fft.division),round(upper_freq/audio_fft.division)]
+	fft_range = AudioFFT(np.full([8,1],None), audio_fft.sample_rate, audio_fft.division, audio_fft.frequency_range[ freq_bounds[0]:freq_bounds[1] ])
+	#fft_range.frequency_range = audio_fft.frequency_range[ freq_bounds[0]:freq_bounds[1] ]
 	fft_range.fft = audio_fft.fft[ freq_bounds[0]:freq_bounds[1] ]
 	return audio_fft_to_color(fft_range)
 
@@ -90,12 +98,12 @@ class WavColor:
 		for fft in self.fft_array:
 			self.colors.append( audio_fft_to_color(fft) )
 
-"""
+
 class LiveColor:
 	def __init__(self, sample_rate, chunk_size):
 		self.sample_rate = sample_rate
 		self.chunk_size = chunk_size
-		self.division = int(chunk_size/sample_rate)
+		self.division = int(sample_rate/chunk_size)
 		self.bands = {}
 		self.freq_scale = self.division*np.arange(self.chunk_size)
 
@@ -108,7 +116,25 @@ class LiveColor:
 			raise Exception('improper frequency range defined.')
 
 		freq_bounds = [round(lower_freq/self.division),round(upper_freq/self.division)]
-		self.bands[band_name] =  freq_bounds
+		frequency_range = self.freq_scale[ freq_bounds[0]:freq_bounds[1] ]
+		self.bands[band_name] = [freq_bounds, frequency_range]
+
+	def __live_fft(self, audio_chunk):
+		c = fft(audio_chunk)
+		d = int(len(c)/2)  # you only need half of the fft list (real signal symmetry)
+		return abs(c[:(d-1)])
+
+	def color_band_buffer(self, stream_chunk):
+		return None
+		processed_audio = AudioFFT(stream_chunk, self.sample_rate, self.division, self.freq_scale)
+		color_bands = {}
+		for band_name, band_data in self.bands.items():
+			color_bands[band_name] = audio_fft_range_to_color(processed_audio, band_data[0][0], band_data[0][1], band_data[1])
+
+		return color_bands
 
 	def color_buffer(self, stream_chunk):
-"""
+		processed_audio = AudioFFT(stream_chunk, self.sample_rate, self.division, self.freq_scale)
+		print(processed_audio.fft)
+		return audio_fft_to_color( processed_audio )
+	
