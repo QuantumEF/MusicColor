@@ -5,9 +5,9 @@ import numpy as np
 from colorsys import hsv_to_rgb
 import pygame
 from MusicColorLib import WavColor
-filename = "ProprietaryMusic/MusicTest2.wav"
+filename = "ProprietaryMusic/MusicTest.wav"
 
-wavtest = WavColor(filename)
+wavtest = WavColor(filename,8)
 wavtest.add_band('low', 20, 150)
 wavtest.add_band('lowmid', 150, 500)
 wavtest.add_band('mid', 500, 1200)

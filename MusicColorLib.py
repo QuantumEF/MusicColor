@@ -42,10 +42,12 @@ def audio_fft_to_color( audio_fft ):
 	return np.multiply(255,color)
 
 #This takes an input of class AudioFFT and a lover and upper frequency bounds
-def audio_fft_range_to_color(audio_fft, lower_freq = None, upper_freq = None, freq_bounds = np.full([8,1],None) ):
-	if freq_bounds.all() == None:
+def audio_fft_range_to_color(audio_fft, lower_freq = None, upper_freq = None, freq_bounds = None, freq_range = np.full([8,1],None)):
+	if freq_bounds is None:
 		freq_bounds = [round(lower_freq/audio_fft.division),round(upper_freq/audio_fft.division)]
-	fft_range = AudioFFT(np.full([8,1],None), audio_fft.sample_rate, audio_fft.division, audio_fft.frequency_range[ freq_bounds[0]:freq_bounds[1] ])
+		fft_range = AudioFFT(np.full([8,1],None), audio_fft.sample_rate, audio_fft.division, audio_fft.frequency_range[ freq_bounds[0]:freq_bounds[1] ])
+	else:
+		fft_range = AudioFFT(np.full([8,1],None), audio_fft.sample_rate, audio_fft.division, freq_range)
 	#fft_range.frequency_range = audio_fft.frequency_range[ freq_bounds[0]:freq_bounds[1] ]
 	fft_range.fft = audio_fft.fft[ freq_bounds[0]:freq_bounds[1] ]
 	return audio_fft_to_color(fft_range)
@@ -83,8 +85,8 @@ class WavColor:
 		elif (upper_freq <= lower_freq):
 			raise Exception('improper frequency range defined.')
 
-		freq_bounds = [round(lower_freq/self.division),round(upper_freq/self.division)]
-		self.bands[band_name] =  freq_bounds
+		freq_bounds = [lower_freq, upper_freq]
+		self.bands[band_name] = freq_bounds
 
 	def process_all_band_colors(self):
 		if len(self.bands) == 0:
@@ -119,17 +121,12 @@ class LiveColor:
 		frequency_range = self.freq_scale[ freq_bounds[0]:freq_bounds[1] ]
 		self.bands[band_name] = [freq_bounds, frequency_range]
 
-	def __live_fft(self, audio_chunk):
-		c = fft(audio_chunk)
-		d = int(len(c)/2)  # you only need half of the fft list (real signal symmetry)
-		return abs(c[:(d-1)])
-
 	def color_band_buffer(self, stream_chunk):
-		return None
+		#return None
 		processed_audio = AudioFFT(stream_chunk, self.sample_rate, self.division, self.freq_scale)
 		color_bands = {}
 		for band_name, band_data in self.bands.items():
-			color_bands[band_name] = audio_fft_range_to_color(processed_audio, band_data[0][0], band_data[0][1], band_data[1])
+			color_bands[band_name] = audio_fft_range_to_color(processed_audio, None, None, band_data[0], band_data[1])
 
 		return color_bands
 

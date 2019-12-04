@@ -14,7 +14,7 @@ p = pyaudio.PyAudio()
 stream = p.open(format=pyaudio.paInt16, channels=1, rate=sample_rate, input=True, frames_per_buffer=chunk_size)
 
 #pygame screen setup
-(width, height) = (300, 200)
+(width, height) = (500, 100)
 screen = pygame.display.set_mode((width, height))
 running = True
 
@@ -30,11 +30,12 @@ color_stream.add_band('high', 6000, 20000)
 while running:
 	b = np.frombuffer(stream.read(chunk_size),dtype=np.int16)
 	color_bands = color_stream.color_band_buffer(b)
-	pygame.draw.rect(screen, color_bands["low"][i], (0,0,100,100), 0)
-	pygame.draw.rect(screen, color_bands["lowmid"][i], (100,0,100,100), 0)
-	pygame.draw.rect(screen, color_bands["mid"][i], (200,0,100,100), 0)
-	pygame.draw.rect(screen, color_bands["highmid"][i], (300,0,100,100), 0)
-	pygame.draw.rect(screen, color_bands["high"][i], (400,0,100,100), 0)
+	print(color_bands)
+	pygame.draw.rect(screen, color_bands["low"], (0,0,100,100), 0)
+	pygame.draw.rect(screen, color_bands["lowmid"], (100,0,100,100), 0)
+	pygame.draw.rect(screen, color_bands["mid"], (200,0,100,100), 0)
+	pygame.draw.rect(screen, color_bands["highmid"], (300,0,100,100), 0)
+	pygame.draw.rect(screen, color_bands["high"], (400,0,100,100), 0)
 	pygame.display.flip()
 
 	for event in pygame.event.get():
