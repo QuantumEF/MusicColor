@@ -3,6 +3,7 @@ from scipy.io import wavfile
 import numpy as np
 from colorsys import hsv_to_rgb
 from warnings import warn
+import time
 
 class AudioFFT:
 	def __init__(self, audio_chunk = None, sample_rate = 44100, division = 7, frequency_range = np.full([8,1],None)):
@@ -72,10 +73,14 @@ class WavColor:
 			self.audio = data.T
 
 		self.fft_array = []
+
+		#tic = time.perf_counter()
 		#This is to pre-process the wav file
 		for chunk in range(0,len(self.audio)-self.chunk_size,self.chunk_size):
 			processed_audio = AudioFFT( self.audio[chunk:chunk+self.chunk_size], self.sample_rate, division )
 			self.fft_array.append(processed_audio)
+		#toc = time.perf_counter()
+		#print(f"Time elapsed: {toc - tic:0.4f} for { len(self.audio)/self.sample_rate } sec?")
 
 	def add_band(self, band_name, lower_freq, upper_freq):
 		if (lower_freq < 0) or (lower_freq > self.sample_rate):
@@ -132,6 +137,6 @@ class LiveColor:
 
 	def color_buffer(self, stream_chunk):
 		processed_audio = AudioFFT(stream_chunk, self.sample_rate, self.division, self.freq_scale)
-		print(processed_audio.fft)
+		#print(processed_audio.fft)
 		return audio_fft_to_color( processed_audio )
 	

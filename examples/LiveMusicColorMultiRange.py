@@ -30,7 +30,7 @@ color_stream.add_band('high', 6000, 20000)
 while running:
 	b = np.frombuffer(stream.read(chunk_size),dtype=np.int16)
 	color_bands = color_stream.color_band_buffer(b)
-	print(color_bands)
+	#print(color_bands)
 	pygame.draw.rect(screen, color_bands["low"], (0,0,100,100), 0)
 	pygame.draw.rect(screen, color_bands["lowmid"], (100,0,100,100), 0)
 	pygame.draw.rect(screen, color_bands["mid"], (200,0,100,100), 0)
